@@ -884,6 +884,64 @@ def build_contacto():
     page('contacto.html', 'Contacto | Cátedra Ikerlan', 'Contacta con la Cátedra Ikerlan-Uniovi en la Escuela Politécnica de Ingeniería de Gijón.', body)
 
 
+# URLs de la antigua web de Wix -> páginas nuevas (para no romper enlaces ni Google)
+OLD_URLS = {
+    'blog': 'noticias.html',
+    'equipo-1': 'equipo.html',
+    'copia-de-prácticas': 'tfg-tfm.html',
+    'challenge2023': 'challenge-2023.html',
+    'prácticas': 'practicas.html',
+    'proyectos': 'investigacion.html',
+    'experiencias': 'estudiantes.html',
+    'premios': 'convocatoria.html',
+    'post/escribe-en-tu-blog-desde-tu-sitio-web-o-móvil': 'noticias.html',
+    'post/convocatoria-premios-cátedra-ikerlan-2021-2022': 'noticias/convocatoria-premios-catedra-ikerlan-2021-2022.html',
+    'post/renovamos-por-4-años-la-cátedra-ikerlan': 'noticias/renovamos-por-4-anos-la-catedra-ikerlan.html',
+    'post/jornada-catedra-ikerlan-2023': 'noticias/jornada-catedra-ikerlan-2023.html',
+    'post/22-diciembre-defensa-de-tesis': 'noticias/defensa-tesis-mikel-escalero.html',
+    'post/alejandro-fernández-y-mario-martín-premiados-por-la-cátedra-ikerlan': 'noticias/premios-alejandro-fernandez-mario-martin.html',
+    'post/fruela-de-la-roza-y-pelayo-fernández-ganadores-de-los-premios-cátedra-ikerlan-2020': 'noticias/premios-2020-fruela-de-la-roza-pelayo-fernandez.html',
+    'post/mario-martín-y-malena-potesta-reciben-los-premios-de-la-cátedra-ikerlan': 'noticias/premios-mario-martin-malena-potesta.html',
+    'post/la-cátedra-ikerlan-de-investigación-y-desarrollo-inaugura-su-sede-en-el-campus-de-gijón-de-la-univer': 'noticias/inauguracion-sede-campus-gijon.html',
+    'post/i-concurso-ideas-cátedra-ikerlan': 'noticias/i-concurso-ideas-catedra-ikerlan.html',
+}
+
+
+def build_redirects():
+    for old, new in OLD_URLS.items():
+        target = '../' * (old.count('/') + 1) + new
+        html = f'''<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Cátedra Ikerlan</title>
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url={target}">
+<link rel="canonical" href="{target}">
+</head><body><p>Esta página se ha movido: <a href="{target}">continuar</a>.</p></body></html>
+'''
+        full = os.path.join(ROOT, old, 'index.html')
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(html)
+    print('   %d redirecciones de URLs antiguas' % len(OLD_URLS))
+
+
+def build_404():
+    body = f'''{hero('Página no encontrada', 'La página que buscas no existe o ha cambiado de dirección.', crumb='404')}
+<section class="section"><div class="container">
+  <p><a class="btn btn--green" href="index.html">Volver al inicio {ICON["arrow"]}</a> <a class="btn" href="noticias.html">Ver noticias</a></p>
+</div></section>
+'''
+    page('404.html', 'Página no encontrada | Cátedra Ikerlan', 'Página no encontrada.', body)
+    # GitHub Pages sirve 404.html en cualquier ruta: fija la base para que funcionen los enlaces relativos
+    full = os.path.join(ROOT, '404.html')
+    with open(full, encoding='utf-8') as f:
+        html = f.read()
+    base = "<script>document.write('<base href=\"'+(location.pathname.indexOf('/catedra-ikerlan/')===0?'/catedra-ikerlan/':'/')+'\">')</script>"
+    html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n' + base, 1)
+    with open(full, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(html)
+
+
 def favicon():
     svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#161616"/><rect x="14" y="12" width="9" height="9" rx="2" fill="#19ff20"/><rect x="14" y="26" width="9" height="26" rx="2" fill="#fff"/><path d="M30 12h9v22l11-12h11L48 36l13 16H50l-11-14v14h-9z" fill="#fff"/></svg>'
     with open(os.path.join(ROOT, 'assets/img/favicon.svg'), 'w', encoding='utf-8') as f:
@@ -895,4 +953,5 @@ if __name__ == '__main__':
     favicon()
     build_index(); build_equipo(); build_convocatoria(); build_estudiantes(); build_tfg()
     build_practicas(); build_investigacion(); build_challenge(); build_noticias(); build_contacto()
+    build_404(); build_redirects()
     print('Listo.')
